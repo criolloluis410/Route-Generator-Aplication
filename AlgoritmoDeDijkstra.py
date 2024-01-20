@@ -1,111 +1,59 @@
+# Import necessary modules: sys to handle infinite values, and heappop, heappush from heapq to handle the priority queue.
 import sys
 from heapq import heappop, heappush
 
-
-# Una clase para almacenar un nodo de heap
+# Define the Node class, representing a node in the graph with an identifier (vertex) and an accumulated weight (weight) from the source node.
 class Node:
-    def __init__(self, vertex, weight=0):
-        self.vertex = vertex
-        self.weight = weight
+    resultList = []  # Class list used to store formatted results for printing.
+    resultList2 = []  # Class list used to store route and cost information for further analysis.
 
-    # Anule la función __lt__() para hacer que la clase `Node` funcione con un min-heap
-    def __lt__(self, other):
-        return self.weight < other.weight
-
-
-# Una clase para representar un objeto graph
-class GraphD:
     def __init__(self, edges, n):
-        # asigna memoria para la lista de adyacencia
+        # Initialize the graph's adjacency list using information from the provided edges.
         self.adjList = [[] for _ in range(n)]
-
-        # agrega bordes al graph dirigido
         for (source, dest, weight) in edges:
             self.adjList[source].append((dest, weight))
 
+    # The __lt__ method is defined to allow node comparison based on weight. Necessary for using Node objects in the priority queue.
+    def __lt__(self, other):
+        return self.weight < other.weight
 
-def get_route(prev, i, route):
-    if i >= 0:
-        get_route(prev, prev[i], route)
-        route.append(i)
+# Define the GraphD class, representing the directed weighted graph.
+class GraphD:
+    def get_route(prev, i, route):
+        # Function used to construct the route from the source node to a given node (i) using information stored in the prev array.
+        if i >= 0:
+            get_route(prev, prev[i], route)
+            route.append(i)
 
-listaResultados = []
-listaResultados2 = []
-# Ejecutar el algoritmo de Dijkstra en un graph dado
-def findShortestPaths(graph, source, n):
-    # crea un min-heap y empuja el nodo de origen con una distancia de 0
-    pq = []
-    heappush(pq, Node(source))
+    def findShortestPaths(graph, source, n):
+        pq = []
+        heappush(pq, Node(source))
+        dist = [sys.maxsize] * n
+        dist[source] = 0
+        done = [False] * n
+        done[source] = True
+        prev = [-1] * n
 
-    # establece la distancia inicial desde la fuente a `v` como infinito
-    dist = [sys.maxsize] * n
+        while pq:
+            # Explore nodes in order of the smallest accumulated cost using a priority queue.
+            node = heappop(pq)
+            u = node.vertex 
 
-    # distancia de la fuente a sí mismo es cero
-    dist[source] = 0
+            for (v, weight) in graph.adjList[u]:
+                if not done[v] and (dist[u] + weight) < dist[v]:
+                    # Update minimum costs and store route information using the get_route function.
+                    dist[v] = dist[u] + weight
+                    prev[v] = u
+                    heappush(pq, Node(v, dist[v]))
 
-    # Lista # para rastrear vértices para los cuales ya se encontró el costo mínimo
-    done = [False] * n
-    done[source] = True
+            done[u] = True
 
-    # almacena el predecesor de un vértice (en una ruta de impresión)
-    prev = [-1] * n
-
-    # se ejecuta hasta que el min-heap esté vacío
-    while pq:
-
-        node = heappop(pq)  # Quitar y devolver el mejor vértice
-        u = node.vertex  # obtener el número de vértice
-
-        # hacer para cada vecino `v` de `u`
-        for (v, weight) in graph.adjList[u]:
-            if not done[v] and (dist[u] + weight) < dist[v]:  # Escalón de relajación
-                dist[v] = dist[u] + weight
-                prev[v] = u
-                heappush(pq, Node(v, dist[v]))
-
-        # marca el vértice `u` como hecho para que no se vuelva a recoger
-        done[u] = True
-    #k=0
-    route = []
-    for i in range(n):
-        if i != source and dist[i] != sys.maxsize:
-            get_route(prev, i, route)
-            print(f'Path ({source} —> {i}): Minimum cost = {dist[i]}, Route = {route}')
-            listaResultados.append(f'Path ({source} —> {i}): Minimum cost = {dist[i]}, Route = {route}')
-            ruta=[]
-            for var in route:
-                ruta.append(var)
-            listaResultados2.append((source,i, dist[i], ruta))
-            #print(listaResultados2[k])
-            #k=k+1
-            route.clear()
-
-'''
-if __name__ == '__main__':
-
-    # inicializa los bordes según el diagrama anterior
-    # (u, v, w) representa la arista del vértice `u` al vértice `v` con peso `w`
-    edges = [(0, 1, 10), (0, 4, 3), (1, 2, 2), (1, 4, 4), (2, 3, 9), (3, 2, 7),
-             (4, 1, 1), (4, 2, 8), (4, 3, 2)]
-
-    # número total de nodos en el graph (etiquetados de 0 a 4)
-    n = 5
-    print(edges)
-    # graph de construcción
-    graph = GraphD(edges, n)
-
-    # ejecuta el algoritmo de Dijkstra desde cada nodo
-    for source in range(n):
-        findShortestPaths(graph, source, n)
-    #findShortestPaths(graph, 0, n)
-    print(listaResultados)
-    listaRutasGateway=[]
-    nodoGW=3
-    for i,dato in enumerate(listaResultados2):
-        if int(dato[1])== nodoGW:
-            print(dato)
-            print(listaResultados[i])
-            for j in range(len(dato[3])-1):
-                listaRutasGateway.append((dato[3][j],dato[3][j+1]))
-
-    print(listaRutasGateway)'''
+        route = []
+        for i in range(n):
+            if i != source and dist[i] != sys.maxsize:
+                get_route(prev, i, route)
+                # Add route and cost information to the resultList and resultList2 lists.
+                GraphD.resultList.append(f'Path ({source} —> {i}): Minimum cost = {dist[i]}, Route = {route}')
+                path = list(route)
+                GraphD.resultList2.append((source, i, dist[i], path))
+                route.clear()
